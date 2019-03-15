@@ -1,0 +1,4 @@
+*.o
+*.swp
+*.si4project/
+terminal
