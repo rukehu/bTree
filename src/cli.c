@@ -91,7 +91,7 @@ static void strchar_d(char *str, int c)
 static int get_clival_input(char *data)
 {
 	int in_len = 0;
-	char *in_buff = swp_buff;
+	char *in_buff = cli_input;
 	char val;
 	int i;
 
@@ -191,6 +191,7 @@ void tree_print(treenode_pt root)
 	int line_len, str_len;
 	int in_idx;
 	int space_len;
+	int *cnt_buff = (int *)cli_input;
 
 	char str[12];
 	char *pos;
@@ -200,7 +201,7 @@ void tree_print(treenode_pt root)
 		return;
 	}
 
-	tree_h = get_tree_height(root);
+	tree_h = layer_node_cnt(root, cnt_buff);
 
 	/*层次遍历二叉树*/
 	ret = layer_order_tree(root, node_buff);
@@ -237,7 +238,7 @@ void tree_print(treenode_pt root)
 
 	in_idx = 0;
 	for (i = 0; i < tree_h; i++) {
-		node_cnt = (int)pow(2*1.0, i*1.0);	        //获取当前层节点的个数
+		node_cnt = cnt_buff[i];	        //获取当前层节点的个数
 		memset(swp_buff, ' ', line_len);
 
 		for (j = 0; j < node_cnt; j++) {

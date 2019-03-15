@@ -48,6 +48,7 @@ void mid_order_tree(treenode_pt root);
 void post_order_tree(treenode_pt root);
 void travel_tree_node(treenode_pt root, TRAVEL_TYPE type, int opt);
 int layer_order_tree(treenode_pt root, int *buff);
+int layer_node_cnt(treenode_pt root, int *buff);
 int insert_node(treenode_pt root, int in_val);
 int delete_node(treenode_pt root, int d_val);
 int get_tree_height(treenode_pt root);

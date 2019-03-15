@@ -30,49 +30,35 @@ static int node_len = 0;
 static int fetch_node_val(int *val)
 {
 	char data[12];        //节点的值在一个int二进制范围内
-	int i = 0;
-	int look_val = 0;
+	int idx = 0;
+
+	if (fetch_idx >= fetch_len) {
+		return 0;
+	}
 
 	while (1) {
-		if (fetch_idx < fetch_len) {
-			data[i] = swp_buff[fetch_idx];
-			fetch_idx++;
-
-		} else if (fetch_idx == fetch_len){
-			fetch_idx++;
-			break;
-		} else {
-			return 0;
-		}
-
-		if (data[i] >= '0' && data[i] <= '9' || data[i] == '-') {
-			look_val = 1;
-		}
+		data[idx] = swp_buff[fetch_idx];
+		fetch_idx++;
 		
-		if (data[i] == '#') {         //输入#表示此处没有节点
-			if (look_val != 0) {      //已经存在节点的值
-				i--;    
-				fetch_idx--;          //@TODO:当前节点存在，提取下标须退回到#处
-				break;
-			}
-
-			/*@TODO:多个空格需过滤 */
-			while (swp_buff[fetch_idx] == ' ') {
-				fetch_idx++;
-			}
-
-			return 0;
-
-		} else if (data[i] == ' ') {  //空格为节点之间的分隔
+		if (data[idx] == ' ') {  //空格为节点之间的分隔
+			data[idx] = '\0';
 			while (swp_buff[fetch_idx] == ' ') {
 				fetch_idx++;
 			}
 			break;
+
+		} else if(fetch_idx == fetch_len) {
+			data[idx+1] = '\0';
+			break;
 		}
 
-		i++;
+		idx++;
 	}
-	data[i+1] = '\0';
+
+	if (strlen(data) == 0) {
+		return 0;
+	}
+
 	*val = atoi(data);
 
 	return 1;
@@ -102,12 +88,9 @@ static void save_node_val(void)
 	int swp_val;
 
 	node_len = 0;
-	while (fetch_idx < fetch_len) {
-
-		if (0 != fetch_node_val(&swp_val)) {
-			node_buff[node_len] = swp_val;
-			node_len++;
-		}
+	while (0 != fetch_node_val(&swp_val)) {
+		node_buff[node_len] = swp_val;
+		node_len++;
 	}
 }
 
@@ -138,11 +121,11 @@ treenode_pt set_bstree(int *list, int len)
 		if (half != 0) {
 			node->tn_lchild = set_bstree(list, half);
 			node->tn_rchild = set_bstree(&list[half+1], len - (half+1));
+
 		} else if (half == 0 && len == 2) {
 			node->tn_rchild = set_bstree(&list[1], 1);
 		}
 	}
-
 
 	return node;
 }
@@ -164,7 +147,6 @@ void create_tree(treenode_pt *root)
 
 	fetch_len = strlen(swp_buff);
 	save_node_val();
-	sort_node_buff();
 	sort_node_buff();
 	*root = set_bstree(node_buff, node_len);
 }
@@ -246,6 +228,7 @@ void nore_mid_travel(treenode_pt root)
 		}
 	}
 }
+
 
 /*非递归后序遍历*/
 void nore_post_travel(treenode_pt root)
@@ -355,6 +338,54 @@ int layer_order_tree(treenode_pt root, int *buff)
 	}
 
 	return cnt;
+}
+
+
+/*
+ * @brief : 获取每一层节点个数
+ * @param :
+ *		root  :根节点
+ *		buff  :接收每层节点个数缓冲区
+ * @return: 返回层数(缓冲区有效长度)
+ */
+int layer_node_cnt(treenode_pt root, int *buff)
+{
+	treenode_pt node;
+	int idx, n_cnt, next_cnt;
+	int l_cnt;
+
+	if (root ==	NULL) {
+		return 0;
+	}
+
+	clear_btqueue();
+	en_btqueue(root);
+	n_cnt = 1;
+	buff[0] = 1;
+
+	l_cnt = get_tree_height(root);
+	for (idx = 1; idx < l_cnt; idx++) {
+		next_cnt = 0;
+		while (n_cnt > 0) {
+			if (0 != out_btqueue(&node)) { //出队当前层节点
+				n_cnt--;
+			}
+			
+			/*将下一层所有节点入队*/
+			if (node->tn_lchild != NULL) {
+				en_btqueue(node->tn_lchild);
+				next_cnt++;
+			}
+			if (node->tn_rchild != NULL) {
+				en_btqueue(node->tn_rchild);
+				next_cnt++;
+			}
+		}
+		n_cnt = next_cnt;
+		buff[idx] = n_cnt;      //写入当前层节点数
+	}
+
+	return l_cnt;
 }
 
 
