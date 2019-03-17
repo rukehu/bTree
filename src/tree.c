@@ -542,110 +542,88 @@ static treenode_pt search_brother_node(treenode_pt root, int val)
 }
 
 
-/*the tree insert a new  node*/
-int insert_node(treenode_pt root, int in_val)
+/*
+ * @brief : 排序二叉树插入一个节点
+ * @param :
+ *		root :根节点指针
+ *		n_val:插入节点的值
+ * @return:
+ *		1 :节点插入成功.
+ *		0 :节点插入错误.
+ */
+int insert_node(treenode_pt *root, int in_val)
 {
-	int root_idx;
-	int node_cnt = 0;
-	treenode_pt sub_tree;
-	int in_type;
-	int i;
+    if (*root == NULL) {
+        *root = create_node(in_val);
+        return 1;
 
-	if (root == NULL) {
-		return 0;
-	}
+    } else if ((*root)->tn_val > in_val) {
+        return insert_node(&(*root)->tn_lchild, in_val);
 
-	mid_order_tree(root);
-	while (queue_get_data(&node_buff[node_cnt])) {
+    } else if ((*root)->tn_val < in_val) {
+        return insert_node(&(*root)->tn_rchild, in_val);
+    }
 
-		if (node_buff[node_cnt] == root->tn_val) {    //锁定根节点的位置
-			root_idx = node_cnt;
-		}
-		node_cnt++;
-	}
-
-	node_buff[root_idx] = in_val;        //缓冲区添加写入插入的值
-	if (root->tn_val > in_val) {          //节点将插入左部
-		node_len = root_idx+1;
-		in_type = 0;
-
-	} else {						    //节点将插入右部
-		node_len = node_cnt - root_idx;
-		in_type = 1;
-		for (i = 0; i < node_len; i++) {//将节点右部值移至节点缓冲有效位置
-			node_buff[i] = node_buff[root_idx+i];
-		}
-	}
-	/*创建新的子树，删除旧子树重新添加*/
-	sort_node_buff(); 
-	sub_tree  = set_bstree(node_buff, node_len);
-
-	if (in_type == 0) {
-		remove_tree(&root->tn_lchild);
-		root->tn_lchild = sub_tree;
-	} else {
-		remove_tree(&root->tn_rchild);
-		root->tn_rchild = sub_tree;
-	}
-
-	return 1;
+    return 0;
 }
 
 
 /*delete node from val*/
-int delete_node(treenode_pt root, int d_val)
+int delete_node(treenode_pt* p_root, int d_val)
 {
-	int root_idx, d_idx = -1;
-	int node_cnt = 0;
-	treenode_pt sub_tree;
-	int in_type;
-	int i;
+    treenode_pt d_node = NULL;
+    treenode_pt p_node = NULL;
+	treenode_pt p_del = NULL;
 
-	if (root == NULL) {
-		return 0;
-	}
+	search_node(*p_root, &d_node, d_val);
+    if (NULL == d_node){                       //节点不存在
+        return 0;
+    }
+	search_parent_node(*p_root, &p_node, d_val);  //查找父节点
 
-	mid_order_tree(root);
-	while (queue_get_data(&node_buff[node_cnt])) {
+    if (d_node->tn_lchild == NULL) {           /* 情况1::要删除的节点没有左孩子，即只有右孩子或左右孩子都没有*/
+        if (d_node == *p_root) {               //为根节点
+            *p_root = d_node->tn_rchild;
 
-		if (node_buff[node_cnt] == root->tn_val) {    //锁定根节点的位置
-			root_idx = node_cnt;
+		} else {
+            if (d_node == p_node->tn_lchild) {
+                p_node->tn_lchild = d_node->tn_rchild;
+            } else {
+                p_node->tn_rchild = d_node->tn_rchild;
+            }
+        }
 
-		} else if (node_buff[node_cnt] == d_val) {
-			d_idx = node_cnt;
-		}
-		node_cnt++;
-	}
+    }  else if (d_node->tn_rchild == NULL) {    /* 情况2:要删除的节点没有右孩子，即只有左孩子或左右孩子都没有*/
+        if (d_node == *p_root) {
+            *p_root = d_node->tn_lchild;
 
-	if (d_idx < 0) {    //删除的节点不存在
-		return 0;
-	}
+        } else {
+            if (d_node == p_node->tn_lchild) {
+                p_node->tn_lchild = d_node->tn_lchild;
 
-	if (root->tn_val > d_val) {                  //删除的节点在左部
-		in_type = 0;
-		node_len = root_idx - 1;
-		node_buff[d_idx] = node_buff[node_len];  //填补删除空位
+            } else {
+                p_node->tn_rchild = d_node->tn_lchild;
+            }
+        }
 
-	} else {
-		in_type = 1;
-		node_len = node_cnt - (root_idx+1) - 1;  
-		node_buff[d_idx] = node_buff[node_cnt-1];
-		
-		for (i = 0; i < node_len; i++) {//将节点右部值移至节点缓冲有效位置
-			node_buff[i] = node_buff[root_idx+i+1];
-		}
-	}
-	/*创建新的子树，删除旧子树重新添加*/
-	sort_node_buff(); 
-	sub_tree  = set_bstree(node_buff, node_len);
+    }  else {                                 /* 情况3:删除的节点左右孩子都存在*/
+        treenode_pt p_del = d_node->tn_rchild;
+        p_node = d_node;
+        while (p_del->tn_lchild) {          //在其右子树中找一个最小的节点，替代待删除节点
+            p_node = p_del;
+            p_del = p_del->tn_lchild;
+        }
+        d_node->tn_val = p_del->tn_val;
 
-	if (in_type == 0) {
-		remove_tree(&root->tn_lchild);
-		root->tn_lchild = sub_tree;
-	} else {
-		remove_tree(&root->tn_rchild);
-		root->tn_rchild = sub_tree;
-	}
+        if (p_del == p_node->tn_lchild) {
+            p_node->tn_lchild = p_del->tn_rchild;
+        }  else {
+            p_node->tn_rchild = p_del->tn_rchild;
+        }
+
+        d_node = p_del;
+        free(p_del);
+    }
 
 	return 1;
 }
@@ -668,10 +646,10 @@ int change_node_val(treenode_pt root, int o_val, int n_val)
 	if (NULL == root) {
 		return 0;
 	}
-	if (0 == delete_node(root, o_val)) {
+	if (0 == delete_node(&root, o_val)) {
 		return 0;
 	}
-	if (0 == insert_node(root, n_val)) {
+	if (0 == insert_node(&root, n_val)) {
 		return 0;
 	}
 

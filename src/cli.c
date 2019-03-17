@@ -515,7 +515,7 @@ static void cli_cmd_handle(const char *cmd, const char *cmd_param, const char *c
 
 			node_val = atoi(cmd_rep);    //节点值
 
-			if (0 != delete_node(bt_root, node_val)) {
+			if (0 != delete_node(&bt_root, node_val)) {
 				cli_print("delete subtree ok.");
 			} else {
 				cli_print("the node is not found.");
@@ -541,10 +541,10 @@ static void cli_cmd_handle(const char *cmd, const char *cmd_param, const char *c
 			//获取查找节点值以及类型
 			in_val = atoi(cmd_rep);
 
-			if (insert_node(bt_root, in_val) != 0) {
-					printf("insert child node ok.\n");
+			if (insert_node(&bt_root, in_val) != 0) {
+					printf("insert node ok.\n");
 			} else {
-					printf("insert child node error.\n");
+					printf("insert node error.\n");
 			}
 
 			break;
