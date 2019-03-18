@@ -62,8 +62,8 @@ static CLI_CMD_TABLE_TYPE cli_cmd_table[] = {
 };
 
 typedef struct {
-    int n_val;
-    int n_idx;
+    int n_val;        /* 节点值*/
+    int n_idx;        /* 输出时所在当前行位置*/
 } node_cur_s;
 
 static node_cur_s cur_buff[DATA_MAX];      //当前节点索引缓冲
@@ -122,7 +122,6 @@ static int get_clival_input(char *data)
 		}
 		*data = '\0';
 	}
-
 
 	return in_len;
 }
@@ -344,12 +343,16 @@ static void cli_cmd_handle(const char *cmd, const char *cmd_param, const char *c
 
 	switch (cmd_id) {
 		case CMD_TREE_CREATE: {       //创建二叉树
-			char in_data[32];
+			char *in_data = cli_input;
 			int ret;
 			int error_cnt = 0;
 			btlist_pt l_node;
 
 			if (cmd_param != NULL) {
+                if (get_btlist_btree(cmd_param) != NULL) {
+                    cli_print("errror the tree is exit!\n");
+                    return;
+                }
 				l_node = (btlist_pt)malloc(sizeof(btlist_t));
 				strncpy(l_node->bt_name, cmd_param, NAME_MAX);
 				l_node->bt_tree = (treenode_pt)malloc(sizeof(treenode_t)); 
@@ -387,7 +390,7 @@ static void cli_cmd_handle(const char *cmd, const char *cmd_param, const char *c
 					error_cnt++;
 				}
 			}
-			
+
 			break;
 		}
 		case CMD_TREE_TRAVEL: {          //遍历二叉树

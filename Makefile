@@ -9,11 +9,11 @@ all:$(OBJS) $(TARGET)
 $(OBJS):%.o:%.c
 	@echo DIR $(DIR)
 	@echo FILES $(FILES)
-	$(CC) -c $(FLAG) -o $(OBJPATH)/$(notdir $@) $<
+	$(CC) -c $(FLAG) -o $(OBJPATH)/$(notdir $@) $< 
 
 #连接所有的二进制文件生成程序
 $(TARGET):$(OBJPATH)
-	$(CC) $(FLAG) -o $@ $(OBJPATH)/*.o
+	$(CC) -o $@ $(OBJPATH)/*.o -lm
 
 #如果存放二进制文件的目录不存在，则创建
 $(OBJPATH):

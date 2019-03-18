@@ -110,20 +110,20 @@ static treenode_pt create_node(int val)
 
 
 /* 设置一颗排序二叉树*/
-treenode_pt set_bstree(int *list, int len)
+treenode_pt set_bstree(int *buff, int len)
 {
 	treenode_pt node = NULL;
 	int half = (len-1) / 2;
 
-	if (len != 0) {
-		node = create_node(list[half]);
+	if (len > 0) {
+		node = create_node(buff[half]);
 
-		if (half != 0) {
-			node->tn_lchild = set_bstree(list, half);
-			node->tn_rchild = set_bstree(&list[half+1], len - (half+1));
+		if (half > 0) {
+			node->tn_lchild = set_bstree(buff, half);
+			node->tn_rchild = set_bstree(&buff[half+1], len - (half+1));
 
 		} else if (half == 0 && len == 2) {
-			node->tn_rchild = set_bstree(&list[1], 1);
+			node->tn_rchild = set_bstree(&buff[1], 1);
 		}
 	}
 

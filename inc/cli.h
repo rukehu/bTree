@@ -10,6 +10,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <math.h>
 
 
 #define CLI_FORMAT        ("BTREE>")        /* CLI interface prompt string */
