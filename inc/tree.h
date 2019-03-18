@@ -56,5 +56,6 @@ int change_node_val(treenode_pt root, int o_val, int n_val);
 void clear_tree(treenode_pt root);
 void remove_tree(treenode_pt *root);
 int find_node_val(int *val, treenode_pt root, int find_val, FIND_TYPE type);
+void search_parent_node(treenode_pt root, treenode_pt *p_node, int val);
 
 #endif /* _TREE_H_ */

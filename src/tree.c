@@ -477,7 +477,7 @@ static void search_node(treenode_pt root, treenode_pt *p_node, int val)
  *		val   :查找的节点值
  * @return: Not.
  */
-static void search_parent_node(treenode_pt root, treenode_pt *p_node, int val)
+void search_parent_node(treenode_pt root, treenode_pt *p_node, int val)
 {
 	treenode_pt l_child;
 	treenode_pt r_child;
@@ -642,16 +642,49 @@ int delete_node(treenode_pt* p_root, int d_val)
 int change_node_val(treenode_pt root, int o_val, int n_val)
 {
 	treenode_pt node = NULL;
+	treenode_pt p_node = NULL;
+    int change_pos = 0;
 
 	if (NULL == root) {
 		return 0;
 	}
-	if (0 == delete_node(&root, o_val)) {
-		return 0;
-	}
-	if (0 == insert_node(&root, n_val)) {
-		return 0;
-	}
+    search_node(root, &node, o_val);
+    search_parent_node(root, &p_node, o_val);
+
+    if (node == NULL) {        //节点不存在
+        return 0;
+
+    } else if (node->tn_lchild != NULL) {
+        if (node->tn_lchild->tn_val > n_val) {
+            change_pos = 1;    //表示该新的节点需要改变位置
+        }
+
+    } else if (node->tn_rchild != NULL) {
+        if (node->tn_rchild->tn_val < n_val) {
+            change_pos = 1;
+        }
+        
+    } else if (p_node != NULL) {
+        if (p_node->tn_lchild == node && p_node->tn_val < n_val) {
+            change_pos = 1;
+
+        } else if (p_node->tn_rchild == node && p_node->tn_val > n_val) {
+            change_pos = 1;
+        }
+    }
+
+    if (0 == change_pos) {
+        node->tn_val = n_val;
+
+    } else {
+        if (0 == delete_node(&root, o_val)) {
+            return 0;
+        }
+        if (0 == insert_node(&root, n_val)) {
+            return 0;
+        }
+        
+    }
 
 	return 1;
 }

@@ -16,9 +16,11 @@
 
 
 #define CLI_PARAM_CNT        (3L)   //CLI所支持的命令个数
+#define NODE_DIST            (1L)   //节点之间的最小间距
 
 static char cli_input[CLI_INMAX];   //接收cli字符输入缓冲区
 static char data_buff[DATA_MAX];    //数据处理缓冲区
+
 
 /* CLI command code. */
 typedef enum cli_cmd_id {
@@ -59,6 +61,12 @@ static CLI_CMD_TABLE_TYPE cli_cmd_table[] = {
 	{"help",   CMD_CLI_HELP,    "[cmd] :print cmd list or how to use cmd."},
 };
 
+typedef struct {
+    int n_val;
+    int n_idx;
+} node_cur_s;
+
+static node_cur_s cur_buff[DATA_MAX];      //当前节点索引缓冲
 
 /* 删除字符串中存在的字符c */
 static void strchar_d(char *str, int c)
@@ -185,15 +193,18 @@ static void node_str_fomat(char *str, int node, int len)
 void tree_print(treenode_pt root)
 {
 	int i, j, k;
-	int tree_h;
+	int tree_h, full_cnt = 0;
 	int ret;
-	int node_cnt;
+	int node_cnt, node_val;
 	int line_len, str_len;
-	int in_idx;
+	int in_idx, idx;
 	int space_len;
 	int *cnt_buff = (int *)cli_input;
+    treenode_pt p_node = NULL;
+    int width, sp_len, n_len;
+    node_cur_s n_cur, p_cur;
 
-	char str[12];
+	char str_val[12];
 	char *pos;
 	int val;
 
@@ -201,7 +212,7 @@ void tree_print(treenode_pt root)
 		return;
 	}
 
-	tree_h = layer_node_cnt(root, cnt_buff);
+	tree_h = layer_node_cnt(root, cnt_buff);    //获取每一层节点的个数
 
 	/*层次遍历二叉树*/
 	ret = layer_order_tree(root, node_buff);
@@ -213,60 +224,88 @@ void tree_print(treenode_pt root)
 	/*获取节点的字符站位长度*/
 	space_len = 1;
 	for (i = 0; i < ret; i++) {
-		sprintf(str, "%d", node_buff[i]);
-		j = strlen(str);
+		sprintf(str_val, "%d", node_buff[i]);
+		j = strlen(str_val);
 		if (space_len < j) {    //节点输出站位宽度以最大值宽度为准
 			space_len = j;
 		}
 	}
 
-	/*先序遍历二叉树，并将二叉树值以最大占位格式转换存储*/
-	mid_order_tree(root);
-	in_idx = 0;
-	while (queue_get_data(&val)) {
-		node_str_fomat(str, val, space_len);
-		for (i = 0; i < (int)strlen(str); i++) {
-			data_buff[in_idx] = str[i];
-			in_idx++;
-		}
-		data_buff[in_idx] = ' ';
-		data_buff[++in_idx] = ',';
-		in_idx++;
-	}
-	data_buff[in_idx - 1] = '\0';
-	line_len = strlen(data_buff);
+    /* 获取一行打印最大长度*/
+    for (i = 0; i < tree_h; i++) {
+        full_cnt += pow(2.0, i*1.0);
+    }
+    line_len =  full_cnt * space_len + (full_cnt - 1) * NODE_DIST;
 
+    memset(swp_buff, '*', line_len);
 	in_idx = 0;
 	for (i = 0; i < tree_h; i++) {
 		node_cnt = cnt_buff[i];	        //获取当前层节点的个数
-		memset(swp_buff, ' ', line_len);
 
 		for (j = 0; j < node_cnt; j++) {
-			node_str_fomat(str, node_buff[in_idx], space_len);
+            node_val = node_buff[in_idx];
+			node_str_fomat(str_val, node_val, space_len);
+            search_parent_node(root, &p_node, node_val);
+
+			str_len = strlen(str_val);
+            if (p_node == NULL) {      //没有父节点为根节点
+                n_cur.n_idx = line_len / 2 - str_len / 2;
+                n_cur.n_val = node_val;
+
+            } else {
+                for (k = 0; k < in_idx; k++) {    //获取父节点的位置
+                    if (cur_buff[k].n_val == p_node->tn_val) {
+                        p_cur = cur_buff[k];
+                        break;
+                    }
+                }
+
+                n_cur.n_val = node_val;
+                /*TODO:计算当前层节点相对父节点所在位置*/
+                sp_len = NODE_DIST * pow(2, tree_h - i -1);
+                n_len = space_len * pow(2, tree_h - i - 1);
+                width = sp_len + n_len;
+                if (p_cur.n_val > node_val) {
+                    n_cur.n_idx = p_cur.n_idx - width;
+
+                } else {
+                    n_cur.n_idx = p_cur.n_idx + width;
+                }
+            }
+            cur_buff[in_idx] = n_cur;
 			in_idx++;
-			pos = strstr(data_buff, str);
-			k = 0;
-			while (&data_buff[k] != pos) {         //获取节点具体位置
-				k++;
-			}
 
-			str_len = strlen(str);
-			while (str_len > 0) {
-				swp_buff[k] = data_buff[k];
-				k++;
-				str_len--;
-			}
 
-			if (in_idx >= ret) {
-				break;
-			}
+            k = n_cur.n_idx;
+            strcpy(&swp_buff[k], str_val);
+            swp_buff[k+str_len] = '*';
 		}
-
-		swp_buff[line_len] = '\0';
-		printf("%s\n", swp_buff);
-		printf("\n");
 	}
+    swp_buff[line_len] = '\0';
 
+    node_val = cur_buff[0].n_val;
+    for (i = 0; i < in_idx; i++) {
+        if (cur_buff[i].n_val <= node_val) {
+            node_val = cur_buff[i].n_val;
+            space_len = cur_buff[i].n_idx;
+        }
+    }
+    line_len = strlen(&swp_buff[space_len]);
+    in_idx = 0;
+	for (i = 0; i < tree_h; i++) {
+		node_cnt = cnt_buff[i];	        //获取当前层节点的个数
+        memset(data_buff, '*', line_len);
+		for (j = 0; j < node_cnt; j++) {
+            k = cur_buff[in_idx].n_idx;
+            in_idx++;
+            idx = k - space_len;
+            strncpy(&data_buff[idx], &swp_buff[k], str_len);
+            data_buff[idx + str_len] = '*';
+        }
+        data_buff[line_len] = '\0';
+        printf("%s\n", data_buff);
+        printf("\n");
+    }
 }
 
 
@@ -526,11 +565,31 @@ static void cli_cmd_handle(const char *cmd, const char *cmd_param, const char *c
 		case CMD_TREE_IN: {        //插入节点
 			treenode_pt bt_root;
 			int in_val;
+            char val_str[12];
+            char ch;
+			int i = 0, j = 0;
 
 			if (cmd_param == NULL || cmd_rep == NULL) {
-				cli_print("find param error   --try help find");
+				cli_print("param error   --try help find");
 				return;
 			}
+            
+            while (cmd_rep[i] != '\0' && j < 12) {
+                ch = cmd_rep[i];
+
+                if (('0' <= ch && ch <= '9') || ch == '-') {
+                   val_str[j] = ch; 
+                   j++;
+                }
+                i++;
+            }
+            val_str[j] = '\0';
+
+            if (strlen(val_str) == 0) {
+				cli_print("param error,please input int val   --try help.");
+				return;
+            }
+
 			//查找这颗树是否存在
 			bt_root = get_btlist_btree(cmd_param);
 			if (bt_root == NULL) {
@@ -631,7 +690,7 @@ static void cli_cmd_handle(const char *cmd, const char *cmd_param, const char *c
 /* cli用户命令输入字符串处理 */
 static void cli_input_handle(void)
 {
-	int cnt = 0;
+	int cnt = 0, i;
 	char *enter_pos;
 	char *p_save;
 	char *p_ret;
@@ -661,6 +720,20 @@ static void cli_input_handle(void)
 		/* @TODO: 前两个参数不能含有空格 */
 		strchar_d(cmd, ' ');
 		strchar_d(cmd_param, ' ');
+        if (cmd_param != NULL) {
+            if (strlen(cmd_param) == 0) {
+                cmd_param = NULL;
+            }
+        }
+
+        if (cmd_rep != NULL) {
+            while (*cmd_rep == ' ') {
+                cmd_rep++;
+            }
+            if (strlen(cmd_rep) == 0) {
+                cmd_rep = NULL;
+            }
+        }
 
 		cli_cmd_handle(cmd, cmd_param, cmd_rep);
 	}
