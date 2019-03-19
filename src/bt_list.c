@@ -46,6 +46,7 @@ void btlist_reset(void)
 int append_btlist_node(btlist_pt p_node)
 {
 	btlist_pt last_node = btree_list;
+    p_node->bt_next = NULL;
 
 	if (p_node != NULL) {
 		/*lookup the last node*/
@@ -89,9 +90,13 @@ treenode_pt get_btlist_btree(const char *t_name)
 {
 	btlist_pt look_node = btree_list->bt_next;
 
+    if (t_name == NULL) {
+        return NULL;
+    }
+
 	while (look_node != NULL) {
 		// 查找名字对应的树
-		if (strcasecmp(look_node->bt_name, t_name) == 0) {
+		if (strcmp(look_node->bt_name, t_name) == 0) {
 			return look_node->bt_tree;
 		}
 		look_node = look_node->bt_next;
@@ -144,16 +149,15 @@ int get_list_btheight(const char *t_name)
 
 int clear_list_btree(const char *t_name)
 {
-	btlist_pt look_node = btree_list;
-	btlist_pt l_node;
+	btlist_pt l_node = btree_list->bt_next;
 
-	while (look_node->bt_next != NULL) {
-		l_node = look_node->bt_next;
+	while (l_node != NULL) {
 		// 查找名字对应的树
 		if (strcasecmp(l_node->bt_name, t_name) == 0) {
 			clear_tree(l_node->bt_tree);
 			return 1;
 		}
+		l_node = l_node->bt_next;
 	}	
 
 	return 0;

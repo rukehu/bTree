@@ -134,16 +134,7 @@ treenode_pt set_bstree(int *buff, int len)
 /* create binary tree. */
 void create_tree(treenode_pt *root) 
 {
-	char ch;
 	fetch_idx = 0;
-	/*@TODO:字符串头必须是有效数字*/
-	while (swp_buff[fetch_idx] != '\0') {
-		ch = swp_buff[fetch_idx];
-		if (ch >= '0'|| ch <= '9' || ch == '-') {
-			break;
-		}
-		fetch_idx++;
-	}
 
 	fetch_len = strlen(swp_buff);
 	save_node_val();
@@ -207,6 +198,7 @@ void nore_pre_travel(treenode_pt root)
 	}
 }
 
+
 /*非递归中序遍历*/
 void nore_mid_travel(treenode_pt root)
 {
@@ -245,17 +237,19 @@ void nore_post_travel(treenode_pt root)
 		if (p != NULL) {
 			push_stack(stack_opt, p);
 			push_stack(s_swp, p);
-			p = p->tn_lchild;
+			p = p->tn_rchild;
 			
 		} else {
 			pop_stack(stack_opt, &p);
-			p = p->tn_rchild;
+			p = p->tn_lchild;
 		}
 	}
 	while (!is_empty(s_swp)) {
 		pop_stack(s_swp, &p);
 		queue_append_data(p->tn_val);
 	}
+
+	destory_stack(s_swp);    //回收零时分配的栈
 }
 
 
@@ -449,7 +443,8 @@ static void search_node(treenode_pt root, treenode_pt *p_node, int val)
 	treenode_pt l_child;
 	treenode_pt r_child;
 
-	if (root == NULL) {
+	p_node = NULL;
+	if (root == NULL) {	
 		return;
 	}
 
@@ -463,7 +458,7 @@ static void search_node(treenode_pt root, treenode_pt *p_node, int val)
 	if (l_child != NULL) {
 		search_node(l_child, p_node, val);
 	}
-	if (r_child != NULL) {
+	if (r_child != NULL && p_node == NULL) {  //左子树没找到才查找右子树
 		search_node(r_child, p_node, val);
 	}
 }
@@ -482,6 +477,7 @@ void search_parent_node(treenode_pt root, treenode_pt *p_node, int val)
 	treenode_pt l_child;
 	treenode_pt r_child;
 
+	p_node = NULL;
 	if (root == NULL) {
 		return;
 	}
@@ -491,14 +487,14 @@ void search_parent_node(treenode_pt root, treenode_pt *p_node, int val)
 	if (l_child != NULL) {
 		if (l_child->tn_val == val) {
 			*p_node = root;
-			return ;
+			return;
 		}
 		search_parent_node(l_child, p_node, val);
 	}
-	if (r_child != NULL) {
+	if (r_child != NULL && p_node == NULL) {
 		if (r_child->tn_val == val) {
 			*p_node = root;
-			return ;
+			return;
 		}
 		search_parent_node(r_child, p_node, val);
 	}
@@ -581,12 +577,12 @@ int delete_node(treenode_pt* p_root, int d_val)
     }
 	search_parent_node(*p_root, &p_node, d_val);  //查找父节点
 
-    if (d_node->tn_lchild == NULL) {           /* 情况1::要删除的节点没有左孩子，即只有右孩子或左右孩子都没有*/
+    if (d_node->tn_lchild == NULL) {           /* 情况1:要删除的节点没有左孩子，即只有右孩子或左右孩子都没有*/
         if (d_node == *p_root) {               //为根节点
             *p_root = d_node->tn_rchild;
 
 		} else {
-            if (d_node == p_node->tn_lchild) {
+            if (d_node == p_node->tn_lchild) {  //不是根节点一定含有父节点,非左即右
                 p_node->tn_lchild = d_node->tn_rchild;
             } else {
                 p_node->tn_rchild = d_node->tn_rchild;
@@ -607,7 +603,7 @@ int delete_node(treenode_pt* p_root, int d_val)
         }
 
     }  else {                                 /* 情况3:删除的节点左右孩子都存在*/
-        treenode_pt p_del = d_node->tn_rchild;
+        p_del = d_node->tn_rchild;
         p_node = d_node;
         while (p_del->tn_lchild) {          //在其右子树中找一个最小的节点，替代待删除节点
             p_node = p_del;
@@ -617,7 +613,8 @@ int delete_node(treenode_pt* p_root, int d_val)
 
         if (p_del == p_node->tn_lchild) {
             p_node->tn_lchild = p_del->tn_rchild;
-        }  else {
+            
+        }  else {    //右孩子不存在左节点
             p_node->tn_rchild = p_del->tn_rchild;
         }
 

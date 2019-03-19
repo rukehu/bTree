@@ -20,6 +20,8 @@
 
 static char cli_input[CLI_INMAX];   //接收cli字符输入缓冲区
 static char data_buff[DATA_MAX];    //数据处理缓冲区
+static char recv_buff[DATA_MAX];    //接收字符缓冲区
+static int save_buff[DATA_MAX];     //数据临时保存缓冲区
 
 
 /* CLI command code. */
@@ -69,7 +71,7 @@ typedef struct {
 static node_cur_s cur_buff[DATA_MAX];      //当前节点索引缓冲
 
 /* 删除字符串中存在的字符c */
-static void strchar_d(char *str, int c)
+static void strchar_d(char *str, char c)
 {
 	int i = 0;
 	char *p = str;
@@ -101,9 +103,9 @@ static int get_clival_input(char *data)
 	int in_len = 0;
 	char *in_buff = cli_input;
 	char val;
-	int i;
+	int i, cnt;
 
-
+    cnt = 0;
 	if (fgets(in_buff, DATA_MAX, stdin) != NULL) {
 		/* 过滤换行符*/
 		strchar_d(in_buff, '\r');
@@ -113,17 +115,16 @@ static int get_clival_input(char *data)
 		for (i = 0; i < in_len; i++) {
 			val = in_buff[i];
 			/* 过滤其他输入字符*/
-			if (('0' <= val && val <= '9') 
-				|| val == '-' || val == ' ') {
+			if (('0' <= val && val <= '9') || val == '-' || val == ' ') {
 
-				*data = val;
-				data++;
+				data[cnt] = val;
+				cnt++;
 			}
 		}
-		*data = '\0';
+		data[cnt] = '\0';
 	}
 
-	return in_len;
+	return cnt;
 }
 
 
@@ -148,6 +149,7 @@ void cli_print(const char *str)
 	if (str != NULL) {
 		printf("%s\n\n", str);
 		printf("%s", CLI_FORMAT);
+
 	} else {
 		printf("%s", CLI_FORMAT);
 	}
@@ -198,13 +200,14 @@ void tree_print(treenode_pt root)
 	int line_len, str_len;
 	int in_idx, idx;
 	int space_len;
-	int *cnt_buff = (int *)cli_input;
+	int *cnt_buff = (int *)recv_buff;
     treenode_pt p_node = NULL;
     int width, sp_len, n_len;
     node_cur_s n_cur, p_cur;
 
 	char str_val[12];
 	char *pos;
+    char ch = ' ';
 	int val;
 
 	if (root == NULL) {
@@ -214,7 +217,7 @@ void tree_print(treenode_pt root)
 	tree_h = layer_node_cnt(root, cnt_buff);    //获取每一层节点的个数
 
 	/*层次遍历二叉树*/
-	ret = layer_order_tree(root, node_buff);
+	ret = layer_order_tree(root, save_buff);
 	if (tree_h <= 0 || ret <= 0) {
 		cli_print("not found the tree.");
 		return;
@@ -223,7 +226,7 @@ void tree_print(treenode_pt root)
 	/*获取节点的字符站位长度*/
 	space_len = 1;
 	for (i = 0; i < ret; i++) {
-		sprintf(str_val, "%d", node_buff[i]);
+		sprintf(str_val, "%d", save_buff[i]);
 		j = strlen(str_val);
 		if (space_len < j) {    //节点输出站位宽度以最大值宽度为准
 			space_len = j;
@@ -242,7 +245,7 @@ void tree_print(treenode_pt root)
 		node_cnt = cnt_buff[i];	        //获取当前层节点的个数
 
 		for (j = 0; j < node_cnt; j++) {
-            node_val = node_buff[in_idx];
+            node_val = save_buff[in_idx];
 			node_str_fomat(str_val, node_val, space_len);
             search_parent_node(root, &p_node, node_val);
 
@@ -274,7 +277,6 @@ void tree_print(treenode_pt root)
             cur_buff[in_idx] = n_cur;
 			in_idx++;
 
-
             k = n_cur.n_idx;
             strcpy(&swp_buff[k], str_val);
             swp_buff[k+str_len] = '*';
@@ -289,17 +291,18 @@ void tree_print(treenode_pt root)
             space_len = cur_buff[i].n_idx;
         }
     }
+
     line_len = strlen(&swp_buff[space_len]);
     in_idx = 0;
 	for (i = 0; i < tree_h; i++) {
 		node_cnt = cnt_buff[i];	        //获取当前层节点的个数
-        memset(data_buff, '*', line_len);
+        memset(data_buff, ch, line_len);
 		for (j = 0; j < node_cnt; j++) {
             k = cur_buff[in_idx].n_idx;
             in_idx++;
             idx = k - space_len;
             strncpy(&data_buff[idx], &swp_buff[k], str_len);
-            data_buff[idx + str_len] = '*';
+            data_buff[idx + str_len] = ch;
         }
         data_buff[line_len] = '\0';
         printf("%s\n", data_buff);
@@ -342,8 +345,9 @@ static void cli_cmd_handle(const char *cmd, const char *cmd_param, const char *c
 	}
 
 	switch (cmd_id) {
-		case CMD_TREE_CREATE: {       //创建二叉树
-			char *in_data = cli_input;
+		case CMD_TREE_CREATE:    //创建二叉树
+		{       
+			char *in_data = recv_buff;
 			int ret;
 			int error_cnt = 0;
 			btlist_pt l_node;
@@ -353,6 +357,7 @@ static void cli_cmd_handle(const char *cmd, const char *cmd_param, const char *c
                     cli_print("errror the tree is exit!\n");
                     return;
                 }
+
 				l_node = (btlist_pt)malloc(sizeof(btlist_t));
 				strncpy(l_node->bt_name, cmd_param, NAME_MAX);
 				l_node->bt_tree = (treenode_pt)malloc(sizeof(treenode_t)); 
@@ -374,7 +379,7 @@ static void cli_cmd_handle(const char *cmd, const char *cmd_param, const char *c
 			while (1) {
 				ret = get_clival_input(in_data);
 				if (ret > 0) {
-					strncpy(swp_buff, in_data, ret);
+					strcpy(swp_buff, in_data);
 					create_tree(&(l_node->bt_tree));
 					break;
 					
@@ -393,7 +398,8 @@ static void cli_cmd_handle(const char *cmd, const char *cmd_param, const char *c
 
 			break;
 		}
-		case CMD_TREE_TRAVEL: {          //遍历二叉树
+		case CMD_TREE_TRAVEL:           //遍历二叉树
+		{
 			treenode_pt bt_root;
 			TRAVEL_TYPE type;
 			char *p_save;
@@ -439,9 +445,9 @@ static void cli_cmd_handle(const char *cmd, const char *cmd_param, const char *c
 			}
 
 			travel_tree_node(bt_root, type, opt);
+
 			break;
 		}
-
 		case CMD_TREE_REMOVE: {        //删除一颗二叉树
 			if (cmd_param == NULL) {
 				cli_print("remove param error   --try remove name");
@@ -462,6 +468,11 @@ static void cli_cmd_handle(const char *cmd, const char *cmd_param, const char *c
 				return;
 			}
 
+            if (get_btlist_btree(cmd_param) == NULL) {
+                cli_print("errror the tree is exit!\n");
+                return;
+            }
+
 			if (0 != clear_list_btree(cmd_param)) {
 				cli_print("clear tree ok.");
 			} else {
@@ -470,7 +481,8 @@ static void cli_cmd_handle(const char *cmd, const char *cmd_param, const char *c
 
 			break;
 		}
-		case CMD_TREE_HEIGHT: {    //获取二叉树高度
+		case CMD_TREE_HEIGHT:    //获取二叉树高度
+		{
 			int h;
 
 			if (cmd_param == NULL) {
@@ -486,8 +498,9 @@ static void cli_cmd_handle(const char *cmd, const char *cmd_param, const char *c
 			}
 
 			break;
-		 }
-		case CMD_TREE_FIND: {     //查找二叉树的父/兄弟节点
+		}
+		case CMD_TREE_FIND:     //查找二叉树的父/兄弟节点
+		{
 			treenode_pt bt_root;
 			FIND_TYPE type;
 			char *p_save;
@@ -539,7 +552,8 @@ static void cli_cmd_handle(const char *cmd, const char *cmd_param, const char *c
 
 			break;
 		}
-		case CMD_TREE_DNODE: {
+		case CMD_TREE_DNODE:
+		{
 			treenode_pt bt_root;
 			int node_val;
 
@@ -565,7 +579,8 @@ static void cli_cmd_handle(const char *cmd, const char *cmd_param, const char *c
 
 			break;
 		}
-		case CMD_TREE_IN: {        //插入节点
+		case CMD_TREE_IN:         //插入节点
+		{
 			treenode_pt bt_root;
 			int in_val;
             char val_str[12];
@@ -653,9 +668,9 @@ static void cli_cmd_handle(const char *cmd, const char *cmd_param, const char *c
 			n_val = atoi(str_nval);
 
 			if (change_node_val(bt_root, o_val, n_val) != 0) {
-					printf("change node val ok.\n");
+                printf("change node val ok.\n");
 			} else {
-					printf("change node val error.\n");
+                printf("change node val error.\n");
 			}
 
 			break;
@@ -707,7 +722,7 @@ static void cli_input_handle(void)
 
 	if (strlen(cli_input) > 0) {
 		p_ret = strtok_r(cli_input, " ", &p_save);
-		while (p_ret != NULL && (cnt < CLI_PARAM_CNT-1)) {
+		while (p_ret != NULL && cnt < (CLI_PARAM_CNT-1)) {
 			if (cnt == 0) {             //提取cmd
 				cmd = p_ret;
 
@@ -737,7 +752,7 @@ static void cli_input_handle(void)
                 cmd_rep = NULL;
             }
         }
-
+        
 		cli_cmd_handle(cmd, cmd_param, cmd_rep);
 	}
 }

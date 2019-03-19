@@ -15,7 +15,7 @@ void stack_init(void)
 {
 	while (NULL == (stack_opt = create_stack())) {
 		sleep(10);
-		printf("stack init error\n");
+		printf("stack init error.\n");
 	}
 }
 
@@ -71,7 +71,7 @@ int push_stack(stack_pt stack, SElemType elem)
 
     if (NULL != newst) {
         newst->data = elem;
-        newst->next = stack->next;  //s->next = NULL;
+        newst->next = stack->next;
         stack->next = newst;
 
         return 1;
