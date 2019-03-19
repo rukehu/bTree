@@ -443,7 +443,6 @@ static void search_node(treenode_pt root, treenode_pt *p_node, int val)
 	treenode_pt l_child;
 	treenode_pt r_child;
 
-	p_node = NULL;
 	if (root == NULL) {	
 		return;
 	}
@@ -477,7 +476,6 @@ void search_parent_node(treenode_pt root, treenode_pt *p_node, int val)
 	treenode_pt l_child;
 	treenode_pt r_child;
 
-	p_node = NULL;
 	if (root == NULL) {
 		return;
 	}

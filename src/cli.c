@@ -283,6 +283,7 @@ void tree_print(treenode_pt root)
 		}
 	}
     swp_buff[line_len] = '\0';
+    printf("swp = %s\n", swp_buff);
 
     node_val = cur_buff[0].n_val;
     for (i = 0; i < in_idx; i++) {
@@ -635,12 +636,12 @@ static void cli_cmd_handle(const char *cmd, const char *cmd_param, const char *c
 			}
 			//查找这颗树是否存在
 			bt_root = get_btlist_btree(cmd_param);
-			if (bt_root == NULL) {
-				cli_print("the tree is not found.");
-				return;
-			}
+			if (bt_root != NULL) {
+                tree_print(bt_root);
 
-			tree_print(bt_root);
+            } else {
+				cli_print("the tree is not found.");
+            }
 
 			break;
 		}
