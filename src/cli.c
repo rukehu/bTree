@@ -449,7 +449,8 @@ static void cli_cmd_handle(const char *cmd, const char *cmd_param, const char *c
 
 			break;
 		}
-		case CMD_TREE_REMOVE: {        //删除一颗二叉树
+		case CMD_TREE_REMOVE:    //删除一颗二叉树 
+        {       
 			if (cmd_param == NULL) {
 				cli_print("remove param error   --try remove name");
 				return;
@@ -463,7 +464,8 @@ static void cli_cmd_handle(const char *cmd, const char *cmd_param, const char *c
 
 			break;
 		}
-		case CMD_TREE_CLEAR: {       //清空一颗二叉树
+		case CMD_TREE_CLEAR:      //清空一颗二叉树
+        {
 			if (cmd_param == NULL) {
 				cli_print("remove param error   --try remove name");
 				return;
@@ -627,7 +629,8 @@ static void cli_cmd_handle(const char *cmd, const char *cmd_param, const char *c
 
 			break;
 	    }
-		case CMD_TREE_SHOW: {
+		case CMD_TREE_SHOW: 
+        {
 			treenode_pt bt_root;
 
 			if (cmd_param == NULL) {
@@ -645,7 +648,8 @@ static void cli_cmd_handle(const char *cmd, const char *cmd_param, const char *c
 
 			break;
 		}
-		case CMD_TREE_CHANGE: {    //改变节点值
+		case CMD_TREE_CHANGE:    //改变节点值
+        {
 			treenode_pt bt_root;
 			char *p_save;
 			char *str_oval;
@@ -676,7 +680,8 @@ static void cli_cmd_handle(const char *cmd, const char *cmd_param, const char *c
 
 			break;
 	    }
-		case CMD_TREE_LIST: {      //获取树列表
+		case CMD_TREE_LIST:       //获取树列表
+        {
 			char *name_buff[128];
 			int tree_cnt = 0;
 			int i;
@@ -693,7 +698,8 @@ static void cli_cmd_handle(const char *cmd, const char *cmd_param, const char *c
 
 			break;
 		}
-		case CMD_CLI_HELP: {        //help命令帮助显示
+		case CMD_CLI_HELP:       //help命令帮助显示
+        {
 			if (cmd_param == NULL) {
 				print_help();
 				return;
